@@ -1,6 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
 from flask_bootstrap import Bootstrap5
 from flask_login import UserMixin, LoginManager
+from flask_login import login_required, current_user, login_user, logout_user
+from bson.objectid import ObjectId
+import gridfs
+import markdown
 from datetime import datetime, timezone
 from pymongo import MongoClient
 
@@ -50,3 +54,38 @@ def load_user(email):
 def index():
     recepti = recepti_collection.find({"status": "published"}).sort('datum', -1)
     return render_template("index.html", recepti=recepti)
+
+@app.route("/recept/create", methods=["GET", "POST"])
+@login_required
+def recept_create():
+    form = ReceptForm()
+    if form.validate_on_submit():
+        image_id = save_image_to_gridfs(request, fs)
+        recept = {
+            'naziv': form.naziv.data,
+            'sastojci': form.sastojci.data,
+            'upute': form.upute.data,
+            'tip_jela': form.tip_jela.data,
+            'vrijeme_pripreme': form.vrijeme_pripreme.data,
+            'autor': current_user.get_id(),
+            'status': form.status.data,
+            'datum': datetime.combine(form.datum.data, datetime.min.time()),
+            'slika_id': image_id,
+            'datum_kreiranja': datetime.utcnow()
+        }
+        recepti_collection.insert_one(recept)
+        flash("Recept je uspješno dodan!", "success")
+        return redirect(url_for("index"))
+    return render_template("recept_edit.html", form=form)
+
+@app.route("/recept/<recept_id>")
+def recept_view(recept_id):
+    recept = recepti_collection.find_one({"_id": ObjectId(recept_id)})
+    if not recept:
+        flash("Recept nije pronađen!", "danger")
+        return redirect(url_for("index"))
+    return render_template("recept_view.html", recept=recept, edit_recept_permission=edit_recept_permission)
+
+
+
+
