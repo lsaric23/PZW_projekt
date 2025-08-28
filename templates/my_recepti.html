@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Moji recepti{% endblock %}
+{% block head %}
+{{ super() }}
+<style>
+    .recept-naziv {
+        font-weight: bold;
+    }
+    .badge-category {
+        background-color: #ff7043;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+
+<h2>Moji recepti</h2>
+
+{% if recepti %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Naziv recepta</th>
+            <th>Datum</th>
+            <th>Vrijeme pripreme</th>
+            <th>Kategorija</th>
+            <th>Akcije</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for recept in recepti %}
+        <tr>
+            <td class="recept-naziv">
+                <a href="{{ url_for('recept_view', recept_id=recept['_id']) }}" class="text-dark text-decoration-none">
+                    {{ recept.naziv }}
+                </a>
+            </td>
+            <td>{{ recept.datum.strftime('%d.%m.%Y') }}</td>
+            <td>{{ recept.status | localize_status }}</td>
+            <td><span class="badge badge-category">{{ recept.tip_jela }}</span></td>
+            <td>
+                <a href="{{ url_for('recept_edit', recept_id=recept['_id']) }}" class="btn btn-primary btn-sm">Uredi</a>
+                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
+                    data-bs-target="#deleteModal" data-receptid="{{ recept['_id'] }}">
+                    Briši
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Nemate recepata.</p>
+{% endif %}
+
+{% endblock %}

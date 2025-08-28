@@ -4,7 +4,7 @@ from wtforms.validators import DataRequired, Length, Email, EqualTo
 from datetime import datetime
 from flask_wtf.file import FileAllowed
 
-class RecipeForm(FlaskForm):
+class ReceptForm(FlaskForm):
     title = StringField('Naziv recepta', validators=[DataRequired(), Length(min=3, max=100)])
     description = TextAreaField('Kratki opis', validators=[Length(max=300)])
     ingredients = TextAreaField('Sastojci', render_kw={"placeholder": "Npr. 200g brašna, 2 jaja, 1 žlica šećera..."}, validators=[DataRequired()])
