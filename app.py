@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, abort
-from flask_bootstrap import Bootstrap5
+from flask_bootstrap import Bootstrap
 from datetime import datetime, timezone
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -13,6 +13,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
 import os
+from flask_principal import Principal, Permission, RoleNeed, Identity, identity_changed, identity_loaded, UserNeed, Need
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
@@ -23,7 +24,7 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 
-bootstrap = Bootstrap5(app)
+bootstrap = Bootstrap(app)
 client = MongoClient(os.getenv('MONGODB_CONNECTION_STRING'))
 db = client['kuharica_database']
 recepti_collection = db['recepti']
@@ -34,6 +35,10 @@ mail = Mail(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+principal = Principal(app)
+admin_permission = Permission(RoleNeed('admin'))
+author_permission = Permission(RoleNeed('author'))
 
 @login_manager.user_loader
 def load_user(email):
@@ -165,12 +170,8 @@ def serve_image(image_id):
 def markdown_filter(text):
     return markdown.markdown(text)
 
-class EditRecipeNeed:
-    def __init__(self, recipe_id):
-        super().__init__('edit_recipe', recipe_id)
-
 def edit_recept_permission(recept_id):
-    return Permission(EditRecipeNeed(str(ObjectId(recept_id))))
+    return Permission(EditReceptNeed(str(ObjectId(recept_id))))
 
 @identity_loaded.connect_via(app)
 def on_identity_loaded(sender, identity):
@@ -182,7 +183,7 @@ def on_identity_loaded(sender, identity):
             identity.provides.add(RoleNeed('admin'))
         user_recepti = recepti_collection.find({"autor": current_user.get_id()})
         for recept in user_recepti:
-            identity.provides.add(EditRecipeNeed(str(recept["_id"])))
+            identity.provides.add(EditReceptNeed(str(recept["_id"])))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -289,7 +290,6 @@ def update_user_data(user_data, form):
         }}
         )
         if form.image.data:
-            # Pobrišimo postojeću ako postoji
             if hasattr(user_data, 'image_id') and user_data.image_id:
                 fs.delete(user_data.image_id)
             
@@ -332,3 +332,48 @@ def my_recepti():
     recepti = recepti_collection.find({"autor": current_user.get_id()}).sort("datum", -1)
     return render_template("my_recepti.html", recepti=recepti)
 
+def localize_status(status):
+    translations = {
+        "draft": "Skica",
+        "published": "Objavljen"
+    }
+    return translations.get(status, status)
+
+app.jinja_env.filters['localize_status'] = localize_status
+
+class EditReceptNeed2(Need):
+    def __init__(self, recept_id):
+        super().__init__('edit_recept', recept_id)
+
+class EditReceptNeed:
+    def __init__(self, recept_id):
+        self.method = 'edit_recept'
+        self.value = recept_id
+
+
+def edit_recept_permission(recept_id):
+    return Permission(EditReceptNeed(str(ObjectId(recept_id))))
+
+@identity_loaded.connect_via(app)
+def on_identity_loaded(sender, identity):
+    if current_user.is_authenticated:
+        identity.user = current_user
+        identity.provides.add(UserNeed(current_user.id))
+        identity.provides.add(RoleNeed('author'))
+        if current_user.is_admin:
+            identity.provides.add(RoleNeed('admin'))
+        user_posts = recepti_collection.find({"author": current_user.get_id()})
+        for post in user_posts:
+            identity.provides.add(EditReceptNeed(str(post["_id"])))
+
+
+@app.route('/users', methods=['GET', 'POST'])
+@login_required
+@admin_permission.require(http_exception=403)
+def users():
+    users = users_collection.find().sort("email")
+    return render_template('users.html', users = users)
+
+@app.errorhandler(403)
+def access_denied(e):
+    return render_template('403.html', description=e.description), 403
