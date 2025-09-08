@@ -1,25 +1,30 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, DateField, FileField, SubmitField, RadioField, PasswordField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo
-from datetime import datetime
 from flask_wtf.file import FileAllowed
+from datetime import date
+from wtforms import StringField, TextAreaField, SelectField, RadioField, FileField, SubmitField, IntegerField, DateField
+from wtforms.validators import DataRequired, Length, Optional
+from flask_wtf.file import FileAllowed
+from flask_wtf import FlaskForm
 
 class ReceptForm(FlaskForm):
     title = StringField('Naziv recepta', validators=[DataRequired(), Length(min=3, max=100)])
     description = TextAreaField('Kratki opis', validators=[Length(max=300)])
     ingredients = TextAreaField('Sastojci', render_kw={"placeholder": "Npr. 200g brašna, 2 jaja, 1 žlica šećera..."}, validators=[DataRequired()])
-    instructions = TextAreaField('Upute za pripremu', render_kw={"id": "markdown-editor"}, validators=[DataRequired()])
+    instructions = TextAreaField('Upute za pripremu', render_kw={"id": "markdown-editor"}, validators=[Optional()])
     category = SelectField('Kategorija', choices=[
         ('predjelo', 'Predjelo'),
         ('glavno_jelo', 'Glavno jelo'),
         ('desert', 'Desert'),
         ('napitak', 'Napitak'),
         ('ostalo', 'Ostalo')
-    ])
-    date = DateField('Datum dodavanja', default=datetime.today)
+        ], validators=[DataRequired()])
+    vrijeme_pripreme = IntegerField('Vrijeme pripreme (u minutama)', validators=[DataRequired()])
+    date = DateField('Datum dodavanja', format='%Y-%m-%d', default=date.today, validators=[Optional()])
     status = RadioField('Status', choices=[('draft', 'Skica'), ('published', 'Objavljeno')], default='draft')
     tags = StringField('Oznake', render_kw={"id": "tags"})
-    image = FileField('Fotografija recepta', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Samo slike!')])
+    image = FileField('Fotografija recepta', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg'], 'Samo slike!')])
     submit = SubmitField('Spremi recept')
 
 class LoginForm(FlaskForm):
@@ -29,7 +34,8 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Prijava')
 
 class RegisterForm(FlaskForm):
-    email = StringField('E-mail', validators=[DataRequired(), Length(3, 64), Email()])
+    username = StringField("Korisničko ime", validators=[DataRequired(), Length(min=3, max=30)])
+    email = StringField("E-mail", validators=[DataRequired(), Email()])
     password = PasswordField('Zaporka', validators=[DataRequired(), EqualTo('password2', message='Zaporke moraju biti jednake.')])
     password2 = PasswordField('Potvrdi zaporku', validators=[DataRequired()])
     submit = SubmitField('Registracija')

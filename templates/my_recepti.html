@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}Moji recepti{% endblock %}
+
 {% block head %}
 {{ super() }}
 <style>
@@ -18,7 +19,7 @@
 <h2>Moji recepti</h2>
 
 {% if recepti %}
-<table class="table table-striped">
+<table class="table table-striped" id="receptTable">
     <thead>
         <tr>
             <th>Naziv recepta</th>
@@ -30,19 +31,19 @@
     </thead>
     <tbody>
         {% for recept in recepti %}
-        <tr>
+        <tr id="recept-{{ recept['_id'] }}">
             <td class="recept-naziv">
                 <a href="{{ url_for('recept_view', recept_id=recept['_id']) }}" class="text-dark text-decoration-none">
-                    {{ recept.naziv }}
+                    {{ recept.get('title', '') }}
                 </a>
             </td>
-            <td>{{ recept.datum.strftime('%d.%m.%Y') }}</td>
-            <td>{{ recept.status | localize_status }}</td>
-            <td><span class="badge badge-category">{{ recept.tip_jela }}</span></td>
+            <td>{{ recept['date'].strftime('%d.%m.%Y') if recept.get('date') else '' }}</td>
+            <td>{{ recept.get('vrijeme_pripreme', '') }}</td>
+            <td><span class="badge badge-category">{{ recept.get('category', '') }}</span></td>
             <td>
                 <a href="{{ url_for('recept_edit', recept_id=recept['_id']) }}" class="btn btn-primary btn-sm">Uredi</a>
                 <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                    data-bs-target="#deleteModal" data-receptid="{{ recept['_id'] }}">
+                        data-bs-target="#deleteModal" data-receptid="{{ recept['_id'] }}">
                     Briši
                 </button>
             </td>
@@ -53,5 +54,58 @@
 {% else %}
 <p>Nemate recepata.</p>
 {% endif %}
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Potvrda brisanja</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Jeste li sigurni da želite obrisati ovaj recept?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Odustani</button>
+        <button type="button" class="btn btn-danger" id="confirmDelete">Briši</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    let deleteReceptId = null;
+    const deleteModal = document.getElementById('deleteModal');
+
+    deleteModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        deleteReceptId = button.getAttribute('data-receptid');
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (!deleteReceptId) return;
+
+        fetch('{{ url_for("delete_recept") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() if csrf_token is defined else "" }}'
+            },
+            body: JSON.stringify({recept_id: deleteReceptId})
+        })
+        .then(response => {
+            if (response.ok) {
+                // ukloni red iz tablice
+                const row = document.getElementById('recept-' + deleteReceptId);
+                if (row) row.remove();
+                const modal = bootstrap.Modal.getInstance(deleteModal);
+                modal.hide();
+            } else {
+                alert("Došlo je do pogreške pri brisanju recepta.");
+            }
+        });
+    });
+</script>
 
 {% endblock %}

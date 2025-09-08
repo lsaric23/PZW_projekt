@@ -7,11 +7,41 @@
 {% endblock %}
 
 {% block body %}
-{% from 'bootstrap5/form.html' import render_form %}
 <h2>{{ title }}</h2>
 
 <div class="row">
-    <div class="col-6">{{ render_form(form) }}</div>
+    <div class="col-6">
+        <form method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+
+            <div class="mb-3">
+                {{ form.first_name.label(class="form-label") }}
+                {{ form.first_name(class="form-control") }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.last_name.label(class="form-label") }}
+                {{ form.last_name(class="form-control") }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.bio.label(class="form-label") }}
+                {{ form.bio(class="form-control", rows="3", id="markdown-editor") }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.theme.label(class="form-label") }}
+                {{ form.theme(class="form-select") }}
+            </div>
+
+            <div class="mb-3">
+                {{ form.image.label(class="form-label") }}
+                {{ form.image(class="form-control") }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+        </form>
+    </div>
     <div class="col-6">
         {% if image_id %}
         <img src="{{ url_for('serve_image', image_id=image_id) }}" class="img-thumbnail" style="max-width: 250px;" alt="User photo">
@@ -19,6 +49,7 @@
     </div>
 </div>
 {% endblock %}
+
 {% block scripts %}
 	{{ super() }}
     <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>

@@ -1,40 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}Uređivanje Recepta{% endblock %}
-
-{% block head %}
-{{ super() }}
-<!-- Uključi EasyMDE CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
-<!-- Uključi Choices.js CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-
-{% endblock %}
-
 {% block body %}
-{% from 'bootstrap5/form.html' import render_form %}
-{{ render_form(form) }}
-{% endblock %}
+<div class="container mt-4">
+    <h2>Uredi recept</h2>
+    <form method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
 
-{% block scripts %}
-{{ super() }}
-<!-- Uključi EasyMDE JavaScript -->
+        <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(class="form-control") }}
+            {% for error in form.title.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control") }}
+        </div>
+        
+        <div class="mb-3">
+            {{ form.ingredients.label(class="form-label") }}
+            {{ form.ingredients(class="form-control", rows="4") }}
+        </div>
+
+        
+        <div class="mb-3">
+            {{ form.instructions.label(class="form-label") }}
+            {{ form.instructions(class="form-control", id="markdown-editor", rows="6") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.category.label(class="form-label") }}
+            {{ form.category(class="form-select") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.vrijeme_pripreme.label(class="form-label") }}
+            {{ form.vrijeme_pripreme(class="form-control") }}
+        </div>
+        
+        <div class="mb-3">
+            {{ form.date.label(class="form-label") }}
+            {{ form.date(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.status.label(class="form-label d-block") }}
+            {% for subfield in form.status %}
+                <div class="form-check form-check-inline">
+                    {{ subfield(class="form-check-input") }}
+                    {{ subfield.label(class="form-check-label") }}
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.tags.label(class="form-label") }}
+            {{ form.tags(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.image.label(class="form-label") }}
+            {{ form.image(class="form-control") }}
+        </div>
+
+        <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-success") }}
+            <a href="{{ url_for('my_recepti') }}" class="btn btn-secondary">Odustani</a>
+        </div>
+    </form>
+</div>
+
+<!-- EasyMDE CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+
+<!-- EasyMDE JS -->
 <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
 <script>
 // Inicijalizacija EasyMDE editora
 var easyMDE = new EasyMDE({ element: document.getElementById('markdown-editor') });
-</script>
-
-<!-- Uključi i inicijaliziraj Choices.js JS -->
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-<script>
-    const tagsInput = document.getElementById('tags');
-    const choices = new Choices(tagsInput, {
-        delimiter: ',',
-        editItems: true,
-        maxItemCount: 5,
-        removeItemButton: true,
-        duplicateItemsAllowed: false
-    });
 </script>
 {% endblock %}

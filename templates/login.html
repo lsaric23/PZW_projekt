@@ -1,15 +1,43 @@
 {% extends "base.html" %}
-{% from 'bootstrap5/form.html' import render_form %}
 
 {% block title %}Prijava{% endblock %}
 
 {% block body %}
 <div class="container">
-    <div class="page-header">
+    <div class="page-header mb-4">
         <h1>Prijava</h1>
     </div>
-    <div class="col-md-4">
-        {{ render_form(form) }}
+    <div class="col-md-6">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                {{ form.email.label(class="form-label") }}
+                {{ form.email(class="form-control") }}
+                {% if form.email.errors %}
+                    <div class="text-danger small">
+                        {{ form.email.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.password.label(class="form-label") }}
+                {{ form.password(class="form-control") }}
+                {% if form.password.errors %}
+                    <div class="text-danger small">
+                        {{ form.password.errors[0] }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-check mb-3">
+                {{ form.remember_me(class="form-check-input") }}
+                {{ form.remember_me.label(class="form-check-label") }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Prijava</button>
+        </form>
     </div>
 </div>
 {% endblock %}

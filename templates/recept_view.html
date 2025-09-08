@@ -1,35 +1,37 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5">
-<h2>{{ recept.naziv }}</h2>
+<h2>{{ recept.title }}</h2>
 
-{% if recept.slika_id %}
-<img src="{{ url_for('serve_image', image_id=recept.slika_id) }}" class="img-fluid mb-4 mt-3" alt="Slika recepta">
+{% if recept.image %}
+<img src="{{ url_for('serve_image', image_id=recept.image) }}" class="img-fluid mb-4 mt-3" alt="Slika recepta">
 {% endif %}
 
-<p><strong>Autor:</strong> {{ recept.autor }}</p>
-<p><strong>Tip jela:</strong> {{ recept.tip_jela }}</p>
+{% if recept.description %}
+<p><strong>Kratki opis:</strong> {{ recept.description }}</p>
+{% endif %}
+
+<p><strong>Autor:</strong> {{ recept.user_id }}</p>
+<p><strong>Kategorija:</strong> {{ recept.category }}</p>
+{% if recept.vrijeme_pripreme %}
 <p><strong>Vrijeme pripreme:</strong> {{ recept.vrijeme_pripreme }} minuta</p>
-<p><strong>Datum:</strong> {{ recept.datum.strftime('%d.%m.%Y') }}</p>
+{% endif %}
+<p><strong>Datum:</strong> {{ recept.date.strftime('%d.%m.%Y') }}</p>
 <p><strong>Status:</strong> {{ recept.status|localize_status }}</p>
+
+{% if recept.tags %}
+<p><strong>Oznake:</strong>
+    {% for tag in recept.tags.split(',') %}
+        <span class="badge bg-secondary">{{ tag.strip() }}</span>
+    {% endfor %}
+</p>
+{% endif %}
 
 <hr>
 
 <h4>Sastojci</h4>
 <div class="mb-3">
-{{ recept.sastojci | markdown | safe }}
+    {{ recept.ingredients | markdown | safe }}
 </div>
 
 <h4>Upute za pripremu</h4>
 <div class="mb-3">
-{{ recept.upute | markdown | safe }}
+    {{ recept.instructions | markdown | safe }}
 </div>
-
-{% if edit_recept_permission.can() %}
-<a href="{{ url_for('recept_edit', recept_id=recept._id) }}" class="btn btn-warning">Uredi</a>
-<form action="{{ url_for('delete_recept', recept_id=recept._id) }}" method="post" class="d-inline">
-<button type="submit" class="btn btn-danger" onclick="return confirm('Jeste li sigurni da želite obrisati ovaj recept?')">Obriši</button>
-</form>
-{% endif %}
-</div>
-{% endblock %}
